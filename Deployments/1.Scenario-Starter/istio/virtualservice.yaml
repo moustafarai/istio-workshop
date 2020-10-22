@@ -1,0 +1,107 @@
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: front
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/demo"
+    - uri:
+        prefix: /static
+    route:
+    - destination:
+        subset: v1
+        host: front
+        port:
+          number: 3000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapia
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceA"
+    route:
+    - destination:
+        subset: v1
+        host: webapia
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapib
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceB"
+    route:
+    - destination:
+        subset: v1
+        host: webapib
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapic
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceC"
+    route:
+    - destination:
+        subset: v1
+        host: webapic
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapid
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceD"
+    route:
+    - destination:
+        subset: v1
+        host: webapid
+        port:
+          number: 80

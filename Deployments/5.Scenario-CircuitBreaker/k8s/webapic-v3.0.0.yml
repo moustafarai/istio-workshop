@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapic-v3
+  labels:
+    app: webapic
+    version: v3
+spec:
+  selector:
+    matchLabels:
+      version: v3
+      app: webapic
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: webapic
+        version: v3
+    spec:
+      containers:
+      - name: webapic
+        image: moustafarai/webapic:3.0.0
+        resources:
+          requests:
+            cpu: "200m"
+            memory : "200Mi"
+          limits:
+            cpu: "0.4"
+            memory : "201Mi"
+        ports:
+        - containerPort: 80
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapic
+  labels:
+    app: webapic
+    service: webapic
+spec:
+  ports:
+  - port: 80
+  selector:
+    app: webapic
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: webapic
+  labels:
+    account: webapic

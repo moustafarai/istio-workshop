@@ -1,0 +1,1 @@
+kubectl label namespace monapplication istio-injection=enabled

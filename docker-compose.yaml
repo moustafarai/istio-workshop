@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  main:
+    command: npm start
+    build: front
+    ports:
+      - "8080:3000"
+    stdin_open: true
+  servicea:
+    build: WebApiA
+    ports:
+      - "5000:80"
+  serviceb:
+    build: WebApiB
+    ports:
+      - "5001:80"
+  servicec:
+    build: WebApiC
+    ports:
+      - "5002:80"
+  serviced:
+    build: WebApiD
+    ports:
+      - "5003:80"
+  

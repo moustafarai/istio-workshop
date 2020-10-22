@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front-v2
+  labels:
+    app: front
+    version: v2
+spec:
+  selector:
+    matchLabels:
+      app: front
+      version: v2
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: front
+        version: v2
+    spec:
+      containers:
+      - name: front
+        image: moustafarai/front:2.0.0
+        resources:
+          requests:
+            cpu: "200m"
+            memory : "200Mi"
+          limits:
+            cpu: "0.4"
+            memory : "201Mi"
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front
+  labels:
+    app: front
+    service: front
+spec:
+  ports:
+  - port: 3000
+  selector:
+    app: front
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: front
+  labels:
+    account: front

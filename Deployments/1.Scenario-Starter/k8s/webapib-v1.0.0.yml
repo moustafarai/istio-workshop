@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: monapplication
+  name: webapib-v1
+  labels:
+    app: webapib
+    version : v1
+spec:
+  selector:
+    matchLabels:
+      version : v1
+      app: webapib
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        version : v1
+        app: webapib
+    spec:
+      serviceAccountName: webapib
+      containers:
+      - name: webapib
+        image: moustafarai/webapib:1.0.0
+        resources:
+          requests:
+            cpu: "200m"
+            memory : "200Mi"
+          limits:
+            cpu: "0.4"
+            memory : "201Mi"
+        ports:
+        - containerPort: 80
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: monapplication
+  name: webapib
+  labels:
+    app: webapib
+    service: webapib
+spec:
+  ports:
+  - port: 80
+  selector:
+    app: webapib
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: monapplication
+  name: webapib
+  labels:
+    account: webapib
