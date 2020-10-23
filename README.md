@@ -139,9 +139,9 @@ Avant de rentrer dans le vif du sujet voici une liste de definition de concept I
 
 Suite à l'installation d'istio l'ingress-controller d'Istio sera notre unique point d'entrée vers nos applications hébergés dans le cluster.
 
-Pour le connaitre nous allons utiliser l'IDE Lens pour retrouver l'ip public de l'ingress controller d'istio dans la section Service.
+Pour le connaitre nous allons utiliser l'IDE Lens pour retrouver l'ip public de l'ingress controller d'istio dans la section Network > Service >
 
-![image de Lens]()
+![image de Lens](pictures/lens-network-service.png)
 
 ## Notre Application
 
@@ -157,7 +157,7 @@ Pour continuer sur ce tutoriel merci de cloner ce repository
 ![schéma](pictures/monapplication.png)
 
 
-![image de l'application]()
+![image de l'application](pictures/reactapp.png)
 
 ## Namespace
 
@@ -259,7 +259,8 @@ Nous devons executer la commande suivante pour les déployer dans le cluster :
 kubectl create -f front-v1.0.0.yml -f webapia-v1.0.0.yml -f webapib-v1.0.0.yml -f webapic-v1.0.0.yml -f webapid-v1.0.0.yml
 ```
 Nous pouvons observer le deploiement depuis Lens.
-image de lens
+
+![image de lens](pictures/lens-deploymentapp.png)
 
 Suite au déploiement, votre application n'est pas joignable depuis internet.
 
@@ -360,7 +361,6 @@ Nous allons effectuer son déploiement :
 ```yaml
 kubectl apply -f destinationrules.yaml
 ```
-
 
 Pour le moment nous n'avons qu'une seule version : la v1.
 
@@ -481,12 +481,25 @@ spec:
 ```
 Nous matchons les differents prefixes de route vers les destinations rules. Et plus précisement sur le subset v1 de chaque application.
 
+Notre site est maintenant disponible sur le web à l'adresse suivante :
+http://< ip-public-de-l-istio-ingress>/demo
+
+![image de l'application](pictures/reactapp.png)
+
+Nous allons maintenant utiliser l'add on kiali.
+Kiali est un add on permettant de configurer et monitorer notre service mesh.
+
+Nous pouvons y acceder directement depuis L'IDE Lens.
+
+Pour cela il suffit d'aller dans la rubrique Network > Service.
+De cliquer sur le detail du service kiali et de cliquer sur le lien
 
 
-![image de l'application]()
+![image de kiali](pictures/lenskiali.png)
 
-![image de kiali]()
+Sur le dashboard de kiali nous pouvons ainsi consulté le graph de notre service mesh dans le namespace monapplication 
 
+![image de kiali](pictures/kialigraph1.png)
 
 ## Scénario 2 Traffic Shiffting
 
