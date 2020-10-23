@@ -503,32 +503,307 @@ Sur le dashboard de kiali nous pouvons ainsi consulté le graph de notre service
 
 ## Scénario 2 Traffic Shiffting
 
-deploiement des fichiers yaml de starter
+Une nouvelle version de nos web api est disponible : la version 2.
+Nous allons donc déployer la nouvelle version des apis dans le cluster :
 
-![image de lens]()
+Voici le yaml de la webapi A version 2 : 
 
-deploiement de la gateway
-deploiement des destinations rules
-deploiement des virtual services
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: monapplication
+  name: webapia-v2
+  labels:
+    app: webapia
+    version: v2
+spec:
+  selector:
+    matchLabels:
+      version: v2
+      app: webapia
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        version: v2
+        app: webapia
+    spec:
+      serviceAccountName: webapia
+      containers:
+      - name: webapia
+        image: moustafarai/webapia:2.0.0
+        resources:
+          requests:
+            cpu: "200m"
+            memory : "200Mi"
+          limits:
+            cpu: "0.4"
+            memory : "201Mi"
+        ports:
+        - containerPort: 80
+          protocol: TCP
+```
+Nous n'allons pas visualiser toutes les api.
+Le seul élement changeant est la version : v2 dans les labels
 
-![image de l'application]()
+Nous allons déployer toutes les web apis via cette commande dans le repertoire Deployments/2.Scenario-Routing1/k8s :
 
-![image de kiali]()
+```powershell
+kubectl create -f webapia-v2.0.0.yml -f webapib-v2.0.0.yml -f webapic-v2.0.0.yml -f webapid-v2.0.0.yml
+```
+
+Après une petite verification du bon déroulement sur Lens nous pouvons passer à la suite
+
+![image de lens](pictures/lens-deployment2.png)
 
 
-## Scénario 3 Traffic conditionné
+Nous pouvons voir que nous avons 2 version de subset dans les destination rules dans notre fichier Deployments/2.Scenario-Routing1/istio/destinationrules.yaml
 
-deploiement des fichiers yaml de starter
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: front-destination
+spec:
+  host: front
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: webapia-destination
+spec:
+  host: webapia
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: webapib-destination
+spec:
+  host: webapib
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: webapic-destination
+spec:
+  host: webapic
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: webapid-destination
+spec:
+  host: webapid
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+```
 
-![image de lens]()
+Deployons cette nouvelle version : 
 
-deploiement de la gateway
-deploiement des destinations rules
-deploiement des virtual services
+```powershell
+kubectl apply -f Deployments/2.Scenario-Routing1/istio/destinationrules.yaml
+```
 
-![image de l'application]()
+Nous allons tester le routing par poid avec la répartition suivante :
+- 50 % du traffic sur la version 1 des webapis
+- 50 % du traffic sur la version 2 des webapis
 
-![image de kiali]()
+Voici la definition des Virtual Service de nos web apis :
+```yaml
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: front
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/demo"
+    - uri:
+        prefix: /static
+    route:
+    - destination:
+        subset: v1
+        host: front        
+        port:
+          number: 3000
+      
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapia
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceA"
+    route:
+    - destination:
+        subset: v1
+        host: webapia
+        port:
+          number: 80
+      weight: 50
+    - destination:
+        subset: v2
+        host: webapia
+        port:
+          number: 80
+      weight: 50
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapib
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceB"
+    route:
+    - destination:
+        subset: v1
+        host: webapib
+        port:
+          number: 80
+      weight: 50
+    - destination:
+        subset: v2
+        host: webapib
+        port:
+          number: 80
+      weight: 50
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapic
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceC"
+    route:
+    - destination:
+        subset: v1
+        host: webapic
+        port:
+          number: 80
+      weight: 50
+    - destination:
+        subset: v2
+        host: webapic
+        port:
+          number: 80
+      weight: 50
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapid
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceD"
+    route:
+    - destination:
+        subset: v1
+        host: webapid
+        port:
+          number: 80
+      weight: 50
+    - destination:
+        subset: v2
+        host: webapid
+        port:
+          number: 80
+      weight: 50
+```
+
+Passons à l'execution de la configuration :
+```powershell
+kubectl apply -f Deployments/2.Scenario-Routing1/istio/virtualservice.yaml
+```
+
+Nous pouvons de nouveau tester l'application afin de voir son comportement.
+
+![image de l'application](pictures/reactapp2.png)
+
+Nous pouvons remarquer qu'a chaque refresh de la page nous pouvons passer de la version 1 à la version 2 de l'application.
+
+Nous n'avons pas configuré d'affinité dans cette démo.
+Cependant il est possible de le faire pour rester sur une version afin de garder une cohérence de votre application.
+
+Maintenant passons sur kiali afin d'observer le service mesh.
+
+Nous pouvons dores et déja constater que le graphe à changer :
+
+![image de kiali](pictures/kialigraph2.png)
+
+Nous avons maintenant un routing alétoire 50/50 sur nos webapis.
 
 
 

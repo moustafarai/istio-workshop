@@ -2,6 +2,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
+  namespace: monapplication
   name: front
 spec:
   hosts:
@@ -16,13 +17,16 @@ spec:
         prefix: /static
     route:
     - destination:
-        host: front
+        subset: v1
+        host: front        
         port:
           number: 3000
+      
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
+  namespace: monapplication
   name: webapia
 spec:
   hosts:
@@ -35,13 +39,22 @@ spec:
         prefix: "/ServiceA"
     route:
     - destination:
+        subset: v1
         host: webapia
         port:
           number: 80
+      weight: 50
+    - destination:
+        subset: v2
+        host: webapia
+        port:
+          number: 80
+      weight: 50
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
+  namespace: monapplication
   name: webapib
 spec:
   hosts:
@@ -54,13 +67,22 @@ spec:
         prefix: "/ServiceB"
     route:
     - destination:
+        subset: v1
         host: webapib
         port:
           number: 80
+      weight: 50
+    - destination:
+        subset: v2
+        host: webapib
+        port:
+          number: 80
+      weight: 50
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
+  namespace: monapplication
   name: webapic
 spec:
   hosts:
@@ -73,13 +95,22 @@ spec:
         prefix: "/ServiceC"
     route:
     - destination:
+        subset: v1
         host: webapic
         port:
           number: 80
+      weight: 50
+    - destination:
+        subset: v2
+        host: webapic
+        port:
+          number: 80
+      weight: 50
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
+  namespace: monapplication
   name: webapid
 spec:
   hosts:
@@ -92,6 +123,14 @@ spec:
         prefix: "/ServiceD"
     route:
     - destination:
+        subset: v1
         host: webapid
         port:
           number: 80
+      weight: 50
+    - destination:
+        subset: v2
+        host: webapid
+        port:
+          number: 80
+      weight: 50

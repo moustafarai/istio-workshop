@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: monapplication
   name: webapic-v2
   labels:
     app: webapic
@@ -17,6 +18,7 @@ spec:
         version: v2
         app: webapic
     spec:
+      serviceAccountName: webapic
       containers:
       - name: webapic
         image: moustafarai/webapic:2.0.0
@@ -30,23 +32,3 @@ spec:
         ports:
         - containerPort: 80
           protocol: TCP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webapic
-  labels:
-    app: webapic
-    service: webapic
-spec:
-  ports:
-  - port: 80
-  selector:
-    app: webapic
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: webapic
-  labels:
-    account: webapic

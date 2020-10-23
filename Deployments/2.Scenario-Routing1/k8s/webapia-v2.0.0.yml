@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: monapplication
   name: webapia-v2
   labels:
     app: webapia
@@ -17,6 +18,7 @@ spec:
         version: v2
         app: webapia
     spec:
+      serviceAccountName: webapia
       containers:
       - name: webapia
         image: moustafarai/webapia:2.0.0
@@ -30,23 +32,3 @@ spec:
         ports:
         - containerPort: 80
           protocol: TCP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webapia
-  labels:
-    app: webapia
-    service: webapia
-spec:
-  ports:
-  - port: 80
-  selector:
-    app: webapia
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: webapia
-  labels:
-    account: webapia

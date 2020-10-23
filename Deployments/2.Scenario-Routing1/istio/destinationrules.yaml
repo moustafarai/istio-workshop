@@ -1,6 +1,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
+  namespace: monapplication
   name: front-destination
 spec:
   host: front
@@ -12,6 +13,7 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
+  namespace: monapplication
   name: webapia-destination
 spec:
   host: webapia
@@ -22,13 +24,11 @@ spec:
   - name: v2
     labels:
       version: v2
-  - name: v3
-    labels:
-      version: v3
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
+  namespace: monapplication
   name: webapib-destination
 spec:
   host: webapib
@@ -39,13 +39,11 @@ spec:
   - name: v2
     labels:
       version: v2
-  - name: v3
-    labels:
-      version: v3
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
+  namespace: monapplication
   name: webapic-destination
 spec:
   host: webapic
@@ -56,13 +54,11 @@ spec:
   - name: v2
     labels:
       version: v2
-  - name: v3
-    labels:
-      version: v3
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
+  namespace: monapplication
   name: webapid-destination
 spec:
   host: webapid
@@ -73,6 +69,3 @@ spec:
   - name: v2
     labels:
       version: v2
-  - name: v3
-    labels:
-      version: v3

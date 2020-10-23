@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: monapplication
   name: webapib-v2
   labels:
     app: webapib
@@ -17,6 +18,7 @@ spec:
         version: v2
         app: webapib
     spec:
+      serviceAccountName: webapib
       containers:
       - name: webapib
         image: moustafarai/webapib:2.0.0
@@ -30,23 +32,3 @@ spec:
         ports:
         - containerPort: 80
           protocol: TCP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webapib
-  labels:
-    app: webapib
-    service: webapib
-spec:
-  ports:
-  - port: 80
-  selector:
-    app: webapib
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: webapib
-  labels:
-    account: webapib
