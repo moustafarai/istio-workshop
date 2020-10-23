@@ -134,7 +134,7 @@ Avant de rentrer dans le vif du sujet voici une liste de definition de concept I
 |Virtual Service| Un Virtual Service se compose d'un ensemble de règles de routage qui sont évaluées dans l'ordre, permettant à Istio de faire correspondre chaque demande donnée au service virtuel à une destination réelle spécifique dans le maillage|
 |Destination Rule||
 
-![schéma](.\pictures/gateway.png)
+![schéma](pictures/gateway.png)
 
 
 Suite à l'installation d'istio l'ingress-controller d'Istio sera notre unique point d'entrée vers nos applications hébergés dans le cluster.
@@ -154,7 +154,7 @@ Pour continuer sur ce tutoriel merci de cloner ce repository
 (https://github.com/moustafarai/istio-workshop)
 
 
-![schéma](.\pictures\monapplication.png)
+![schéma](pictures/monapplication.png)
 
 
 ![image de l'application]()
