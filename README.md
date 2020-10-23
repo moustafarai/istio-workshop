@@ -134,24 +134,388 @@ Avant de rentrer dans le vif du sujet voici une liste de definition de concept I
 |Virtual Service| Un Virtual Service se compose d'un ensemble de règles de routage qui sont évaluées dans l'ordre, permettant à Istio de faire correspondre chaque demande donnée au service virtuel à une destination réelle spécifique dans le maillage|
 |Destination Rule||
 
+![schéma](.\pictures/gateway.png)
+
+
+Suite à l'installation d'istio l'ingress-controller d'Istio sera notre unique point d'entrée vers nos applications hébergés dans le cluster.
+
+Pour le connaitre nous allons utiliser l'IDE Lens pour retrouver l'ip public de l'ingress controller d'istio dans la section Service.
+
+![image de Lens]()
 
 ## Notre Application
 
 Nous allons travailler sur une application simpliste :
 Une application React qui appelle 4 webapi net core.
-Les sources sont disponible sur github : [lien](https://github.com/moustafarai/istio-workshop)
+
+Les sources sont disponible sur github : [lien]
+Pour continuer sur ce tutoriel merci de cloner ce repository
+
+(https://github.com/moustafarai/istio-workshop)
+
 
 ![schéma](.\pictures\monapplication.png)
+
+
+![image de l'application]()
+
+## Namespace
+
+Nous allons créer un namespace pour notre nouvelle application :
+```powershell
+kubectl create namespace monapplication
+```
+Afin de profiter du mécanisme d'injection d'istio de facon implicite nous allons ajouter un label au namespace :
+
+```powershell
+kubectl label namespace monapplication istio-injection=enabled
+```
+Pour simplifier : A chaque déploiement dans ce namespace istio se chargera de mettre en place un pod (envoy) en mode side-car.
 
 ## Scénario 1 Starter 
 
 
+Voici le fichier yaml de l'application front : 
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: monapplication
+  name: front-v1
+  labels:
+    app: front
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app: front
+      version: v1
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: front
+        version: v1
+    spec:
+      serviceAccountName: front
+      containers:
+      - name: front
+        image: moustafarai/front:1.0.0
+        stdin: true
+        tty: true
+        resources:
+          requests:
+            cpu: "200m"
+            memory : "500Mi"
+          limits:
+            cpu: "0.4"
+            memory : "701Mi"
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: monapplication
+  name: front
+  labels:
+    account: front
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: monapplication
+  name: front
+  labels:
+    app: front
+    service: front
+spec:
+  ports:
+  - name: http
+    port: 3000
+  selector:
+    app: front
+```
+
+Nous avons defini dans ce fichier yaml les composants suivants :
+- Le service Account
+- Le service
+- Le déploiement du pod
+
+Le service ne doit pas être exposer publiquement il est de type clusterip
+
+Istio à besoin de connaitre votre version dans les métadata pour fonctionner:
+version: v1
+
+
+Nous allons déployer les 4 applications sur le cluster. 
+
+Les fichiers yamls sont disponible dans le repertoire /Deployments/Scenario-Starter/k8s
+
+Nous devons executer la commande suivante pour les déployer dans le cluster :
+```powershell
+kubectl create -f front-v1.0.0.yml -f webapia-v1.0.0.yml -f webapib-v1.0.0.yml -f webapic-v1.0.0.yml -f webapid-v1.0.0.yml
+```
+Nous pouvons observer le deploiement depuis Lens.
+image de lens
+
+Suite au déploiement, votre application n'est pas joignable depuis internet.
+
+Nous devons configurer la route.
+
+Pour cela nous devons dans un premier temps définir la configuration de la gateway :
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  namespace: monapplication
+  name: demo-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+```
+
+Nous allons effectuer son déploiement :
+```powershell
+kubectl apply -f gateway.yaml
+```
+
+Nous avons ouvert le port 80.
+
+La deuxieme étape consiste à definir les subsets dans les destination rules de toutes nos applications :
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: front-destination
+spec:
+  host: front
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: webapia-destination
+spec:
+  host: webapia
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: webapib-destination
+spec:
+  host: webapib
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: webapic-destination
+spec:
+  host: webapic
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  namespace: monapplication
+  name: webapid-destination
+spec:
+  host: webapid
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+```
+
+Dans une DestinationRule un subset permet de définir plusieurs versions pour une meme destination.
+
+Nous allons effectuer son déploiement :
+```yaml
+kubectl apply -f destinationrules.yaml
+```
+
+
+Pour le moment nous n'avons qu'une seule version : la v1.
+
+Les subsets sont maintenant liés à la version v1.
+
+La dernière étape du routing est de faire le lien entre la gateway et les destinations rules.
+
+Voici le fichier virtualservice.yaml :
+
+```yaml
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: front
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/demo"
+    - uri:
+        prefix: /static
+    route:
+    - destination:
+        subset: v1
+        host: front
+        port:
+          number: 3000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapia
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceA"
+    route:
+    - destination:
+        subset: v1
+        host: webapia
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapib
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceB"
+    route:
+    - destination:
+        subset: v1
+        host: webapib
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapic
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceC"
+    route:
+    - destination:
+        subset: v1
+        host: webapic
+        port:
+          number: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  namespace: monapplication
+  name: webapid
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/ServiceD"
+    route:
+    - destination:
+        subset: v1
+        host: webapid
+        port:
+          number: 80
+```
+Nous matchons les differents prefixes de route vers les destinations rules. Et plus précisement sur le subset v1 de chaque application.
+
+
+
+![image de l'application]()
+
+![image de kiali]()
 
 
 ## Scénario 2 Traffic Shiffting
 
+deploiement des fichiers yaml de starter
+
+![image de lens]()
+
+deploiement de la gateway
+deploiement des destinations rules
+deploiement des virtual services
+
+![image de l'application]()
+
+![image de kiali]()
+
+
 ## Scénario 3 Traffic conditionné
 
+deploiement des fichiers yaml de starter
+
+![image de lens]()
+
+deploiement de la gateway
+deploiement des destinations rules
+deploiement des virtual services
+
+![image de l'application]()
+
+![image de kiali]()
 
 
 
