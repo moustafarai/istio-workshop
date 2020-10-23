@@ -1,1 +1,2 @@
+kubectl create namespace monapplication
 kubectl label namespace monapplication istio-injection=enabled
