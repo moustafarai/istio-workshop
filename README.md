@@ -3,7 +3,7 @@
 Dans un précedent article nous avons pu voir ensemble une introduction à Istio. 
 Voir par la théorie ce que peut apporter ce service mesh.
 
-Aujourd'hui nous allons nous pencher sur des cas pratiques.
+Aujourd'hui nous allons nous pencher sur des quelques cas pratiques.
 
 Pré-requis :
 
@@ -28,22 +28,15 @@ Pré-requis :
 
 Nous allons aborder ces differents sujets :
 
-- Création d'un Cluster AKS
-- L'Installation d'Istio
-- Utilisation de Lens
-- Qu'est ce qu'une Gateways ?
-- Qu'est ce qu'un Virtual Service ?
-- Qu'est ce qu'une Destination rule ?
-- Scénario 1 Routing 
-- Scénario 2 Repartir le traffic
-- Scénario 3 Simuler une injection d'Erreur
-- Scénario 4 Simuler un TimeOut
-
+- La mise en place d'istio
+- Comment mettre en place une stratégie de routing dans votre application
 
 
 ## Création d'un Cluster AKS
 
-Commencons par la création d'un cluster AKS via ce script
+Commencons par la création d'un cluster AKS via ce script.
+Ce cluster AKS que nous allons déployer n'est pas ready to prod.
+Cette configuration minimaliste n'est déstiné que pour cette démo.
 
 ```powershell
 $resourcegroup="DV-AKS-RG"
@@ -55,12 +48,13 @@ az aks create --resource-group $resourcegroup --name $clusterAks --node-count 3 
 
 az aks get-credentials -n $akscluster -g $resourcegroup
 ```
-Ce script nous a permis d'effectuer la création du cluster dans un ressource group et d'injecter la config de votre cluster en local. 
+Bilan : nous avons créer un cluster dans un ressource group et nous avons injecter la config de notre cluster sur notre machine. 
+A partir de la nous pouvons dores et déja faire des appels kubectl sur notre nouveau cluster.
 
 ## Installation d'Istio
 
 Cette étapes consiste à effectuer l'installation d'istio sur notre cluster.
-Nous allons commencer par le télécharger du CLI (IstioCtl) et l'ajouter au path de votre environment :
+Nous allons commencer par télécharger le CLI IstioCtl et l'ajouter au path de notre environment :
 
 ```powershell
 $ISTIO_VERSION="1.7.3"
@@ -77,7 +71,8 @@ $USER_PATH = [environment]::GetEnvironmentVariable("PATH", "User") + ";C:\Istio\
 $env:PATH += ";C:\Istio\"
 ```
 
-Nous ajoutons l'opérateur istio sur le cluster:
+Istio fourni un operateur pour gérer ses installations et ses mises à jour dans le cluster.
+Nous l'installons via cette commande:
 
 ```powershell
 istioctl operator init
@@ -88,20 +83,74 @@ Nous devons ajouter un namespace afin de faire les choses proprement et installe
 ```powershell
 kubectl create ns istio-system
 ```
-Et enfin nous déployons istio sur le cluster.
+
+Nous allons créer le fichier istio.aks.yaml qui décrit les specifications de l'opérateur Istio afin d'ajouter des composants utiles (grafana,prometheus,kiali)
+
+```yaml
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: istio-system
+  name: istio-control-plane
+spec:
+  # Use the default profile as the base
+  # More details at: https://istio.io/docs/setup/additional-setup/config-profiles/
+  profile: default
+  # Enable the addons that we will want to use
+  addonComponents:
+    grafana:
+      enabled: true
+    prometheus:
+      enabled: true
+    tracing:
+      enabled: true
+    kiali:
+      enabled: true
+  values:
+    global:
+      # Ensure that the Istio pods are only scheduled to run on Linux nodes
+      defaultNodeSelector:
+        beta.kubernetes.io/os: linux
+    kiali:
+      dashboard:
+        auth:
+          strategy: anonymous
+``` 
+
+Et enfin nous déployons la configuration de l'opérateur istio sur le cluster.
 
 ```powershell
 kubectl apply -f istio.aks.yaml
 ``` 
 
-## Qu'est ce qu'une Gateways ?
 
-## Qu'est ce qu'un Virtual Service ?
-## Qu'est ce qu'une Destination rule ?
-## Scénario 1 Routing 
-## Scénario 2 Repartir le traffic
-## Scénario 3 Simuler une injection d'Erreur
-## Scénario 4 Simuler un TimeOut
+## Quelques définitions
+
+Avant de rentrer dans le vif du sujet voici une liste de definition de concept Istio:
+
+| Concept | Definition |
+| -- | -- |
+| Gateways | La gateway est la passerelle de notre service mesh. Elle permet de controler le trafic entrant et sortant de notre service mesh.|
+|Virtual Service| Un Virtual Service se compose d'un ensemble de règles de routage qui sont évaluées dans l'ordre, permettant à Istio de faire correspondre chaque demande donnée au service virtuel à une destination réelle spécifique dans le maillage|
+|Destination Rule||
+
+
+## Notre Application
+
+Nous allons travailler sur une application simpliste :
+Une application React qui appelle 4 webapi net core.
+Les sources sont disponible sur github : [lien](https://github.com/moustafarai/istio-workshop)
+
+![schéma](.\pictures\monapplication.png)
+
+## Scénario 1 Starter 
+
+
+
+
+## Scénario 2 Traffic Shiffting
+
+## Scénario 3 Traffic conditionné
 
 
 
