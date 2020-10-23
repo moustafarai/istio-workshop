@@ -53,6 +53,7 @@ metadata:
     service: front
 spec:
   ports:
-  - port: 3000
+  - name: http
+    port: 3000
   selector:
     app: front
