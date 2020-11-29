@@ -1,9 +1,10 @@
 # Istio - Workshop
 
-Dans un précedent article nous avons pu voir ensemble une introduction à Istio. 
-Voir par la théorie ce que peut apporter ce service mesh.
+Dans un [précedent article](https://blog.cellenza.com/uncategorized/istio-et-le-service-mesh-kubernetes/) nous avons pu voir ensemble le concept de service mesh et plus précisement Istio et son fonctionnement.
 
-Aujourd'hui nous allons nous pencher sur des quelques cas pratiques.
+Nous avons pu voir ensemble les composants du controle plane et du data plane.
+
+Aujourd'hui nous allons nous pencher sur des quelques cas pratiques de routing.
 
 Pré-requis :
 
@@ -23,7 +24,7 @@ Pré-requis :
     ```powershell
     choco install azure-cli
     ```
-- Lens : Kubernetes IDE [lien](https://github.com/lensapp/lens/releases/latest)
+- Lens : Kubernetes IDE [lien](https://github.com/lensapp/lens/releases/latest) 
 
 
 Nous allons aborder ces differents sujets :
@@ -31,6 +32,8 @@ Nous allons aborder ces differents sujets :
 - La mise en place d'istio
 - Comment mettre en place une stratégie de routing dans votre application
 
+
+# Mise en Place  d'Istio
 
 ## Création d'un Cluster AKS
 
@@ -123,8 +126,9 @@ Et enfin nous déployons la configuration de l'opérateur istio sur le cluster.
 kubectl apply -f istio.aks.yaml
 ``` 
 
+# Stratégie de routing
 
-## Quelques définitions
+## Vocabulaire / Définitions
 
 Avant de rentrer dans le vif du sujet voici une liste de definition de concept Istio:
 
@@ -143,7 +147,9 @@ Pour le connaitre nous allons utiliser l'IDE Lens pour retrouver l'ip public de 
 
 ![image de Lens](pictures/lens-network-service.png)
 
-## Notre Application
+Pour en savoir plus sur Lens cliquez sur ce lien : [link](https://docs.k8slens.dev/latest/getting-started/)
+
+## Use Case
 
 Nous allons travailler sur une application simpliste :
 Une application React qui appelle 4 webapi net core.
@@ -159,7 +165,7 @@ Pour continuer sur ce tutoriel merci de cloner ce repository
 
 ![image de l'application](pictures/reactapp.png)
 
-## Namespace
+## Configuration préalable : le namespace
 
 Nous allons créer un namespace pour notre nouvelle application :
 ```powershell
@@ -172,7 +178,13 @@ kubectl label namespace monapplication istio-injection=enabled
 ```
 Pour simplifier : A chaque déploiement dans ce namespace istio se chargera de mettre en place un pod (envoy) en mode side-car.
 
-## Scénario 1 Starter 
+## Scénario 1
+
+Nous avons développer une nouvelle application front. Cette application dispose de 4 features.
+Chaque feature fait appel a une nouvelle Web Api.
+Nous souhaitons mettre à disposition la version 1.0 de ces nouvelles features (Web Api).
+Nous sommes donc dans un cas simple de routage.
+Nous allons exposer nos services via une gateway puis router simplement nos services sur la version 1.0 
 
 
 Voici le fichier yaml de l'application front : 
@@ -357,6 +369,19 @@ spec:
 
 Dans une DestinationRule un subset permet de définir plusieurs versions pour une meme destination.
 
+Un subset est un sous ensemble d'une destination rule. Celui ci pointera vers l'application matchant avec son label.
+
+Dans notre premier scénario un seul subset sera defini.
+
+Le subset de la webapi A pointera sur la web api ayant le label version v1:
+```
+labels:
+    app: webapia
+    version: v1  
+```
+
+
+
 Nous allons effectuer son déploiement :
 ```yaml
 kubectl apply -f destinationrules.yaml
@@ -486,7 +511,10 @@ http://< ip-public-de-l-istio-ingress>/demo
 
 ![image de l'application](pictures/reactapp.png)
 
-Nous allons maintenant utiliser l'add on kiali.
+
+## Monitoring
+
+Nous allons maintenant utiliser l'add-on kiali.
 Kiali est un add on permettant de configurer et monitorer notre service mesh.
 
 Nous pouvons y acceder directement depuis L'IDE Lens.
@@ -497,14 +525,21 @@ De cliquer sur le detail du service kiali et de cliquer sur le lien
 
 ![image de kiali](pictures/lenskiali.png)
 
-Sur le dashboard de kiali nous pouvons ainsi consulté le graph de notre service mesh dans le namespace monapplication 
+Sur le dashboard de kiali nous pouvons ainsi consulter le graph de notre service mesh dans le namespace monapplication 
+
+Pour en savoir plus sur Kiali cliquez sur ce lien : [Link](https://kiali.io/documentation/)
 
 ![image de kiali](pictures/kialigraph1.png)
 
-## Scénario 2 Traffic Shiffting
+## Scénario 2
 
-Une nouvelle version de nos web api est disponible : la version 2.
-Nous allons donc déployer la nouvelle version des apis dans le cluster :
+Une nouvelle feature de nos web api est disponible : la version 2.
+Nous souhaitons que les internautes puissent tester la nouvelle feature de nos apis.
+Pour cela nous allons équilibrer le traffic entre l'ancienne version (v1) et la nouvelle (v2).
+
+Nous allons rediriger 50 % du traffic sur la version 1 et 50 % du traffic sur la version 2. 
+
+Nous allons déployer la nouvelle version des apis dans le cluster :
 
 Voici le yaml de la webapi A version 2 : 
 
@@ -805,5 +840,13 @@ Nous pouvons dores et déja constater que le graphe à changer :
 
 Nous avons maintenant un routing alétoire 50/50 sur nos webapis.
 
+# Conclusion
+
+Nous avons abordé dans cet article la mise en place d'Istio dans un context de routing.
+
+Nous sommes resté très simpliste sur le concept de Trafic d'Istio. Nous pouvons allez encore plus loin et utiliser d'autres option pour rediriger le traffic (cookies,header, etc..) pour rediriger le traffic. Istio est très complet et permet de répondre aux attentes et contraintes du monde de l'IT.
+
+Parmis toutes les solutions de service mesh existantes (Linkerd,Consul,etc...) Istio reste le plus avancé. Il peut être un peu complexe à mettre à l'echelle néamoins Il est le plus abouti.
 
 
+Si vous souhaitez allez plus loin sur le traffic management d'Istio : [Traffic Management](https://istio.io/latest/docs/tasks/traffic-management/)
