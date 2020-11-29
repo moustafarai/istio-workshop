@@ -844,7 +844,7 @@ Nous avons maintenant un routing alétoire 50/50 sur nos webapis.
 
 Nous avons abordé dans cet article la mise en place d'Istio dans un context de routing.
 
-Nous sommes resté très simpliste sur le concept de Trafic d'Istio. Nous pouvons allez encore plus loin et utiliser d'autres option pour rediriger le traffic (cookies,header, etc..) pour rediriger le traffic. Istio est très complet et permet de répondre aux attentes et contraintes du monde de l'IT.
+Nous sommes resté très simpliste sur le concept de Trafic d'Istio. Nous pouvons allez encore plus loin et utiliser d'autres option pour rediriger le traffic (cookies,header, etc..). Istio est très complet et permet de répondre aux attentes et contraintes du monde de l'IT.
 
 Parmis toutes les solutions de service mesh existantes (Linkerd,Consul,etc...) Istio reste le plus avancé. Il peut être un peu complexe à mettre à l'echelle néamoins Il est le plus abouti.
 
