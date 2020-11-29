@@ -180,10 +180,16 @@ Pour simplifier : A chaque déploiement dans ce namespace istio se chargera de m
 
 ## Scénario 1
 
-Nous avons développer une nouvelle application front. Cette application dispose de 4 features.
+Nous avons développer une nouvelle application front. 
+
+Cette application dispose de 4 features.
+
 Chaque feature fait appel a une nouvelle Web Api.
+
 Nous souhaitons mettre à disposition la version 1.0 de ces nouvelles features (Web Api).
+
 Nous sommes donc dans un cas simple de routage.
+
 Nous allons exposer nos services via une gateway puis router simplement nos services sur la version 1.0 
 
 
@@ -504,7 +510,9 @@ spec:
         port:
           number: 80
 ```
-Nous matchons les differents prefixes de route vers les destinations rules. Et plus précisement sur le subset v1 de chaque application.
+Nous matchons les differents prefixes de route vers les destinations rules. 
+
+Et plus précisement sur le subset v1 de chaque application.
 
 Notre site est maintenant disponible sur le web à l'adresse suivante :
 http://< ip-public-de-l-istio-ingress>/demo
@@ -515,7 +523,7 @@ http://< ip-public-de-l-istio-ingress>/demo
 ## Monitoring
 
 Nous allons maintenant utiliser l'add-on kiali.
-Kiali est un add on permettant de configurer et monitorer notre service mesh.
+Kiali est un add-on permettant de configurer et monitorer notre service mesh.
 
 Nous pouvons y acceder directement depuis L'IDE Lens.
 
@@ -534,12 +542,14 @@ Pour en savoir plus sur Kiali cliquez sur ce lien : [Link](https://kiali.io/docu
 ## Scénario 2
 
 Une nouvelle feature de nos web api est disponible : la version 2.
+
 Nous souhaitons que les internautes puissent tester la nouvelle feature de nos apis.
+
 Pour cela nous allons équilibrer le traffic entre l'ancienne version (v1) et la nouvelle (v2).
 
 Nous allons rediriger 50 % du traffic sur la version 1 et 50 % du traffic sur la version 2. 
 
-Nous allons déployer la nouvelle version des apis dans le cluster :
+Nous allons déployer la nouvelle version des apis dans le cluster.
 
 Voici le yaml de la webapi A version 2 : 
 
